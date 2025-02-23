@@ -1,8 +1,7 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome import pins
-from esphome.const import CONF_ID, CONF_MODE
-from esphome.components import spi
+from esphome.const import CONF_ID
 
 DEPENDENCIES = ['spi']
 AUTO_LOAD = ['spi']
@@ -38,7 +37,7 @@ CONFIG_SCHEMA = cv.Schema({
     cv.GenerateID(): cv.declare_id(NRF24Component),
     cv.Required(CONF_CE_PIN): pins.gpio_output_pin_schema,
     cv.Required(CONF_CSN_PIN): pins.gpio_output_pin_schema,
-    cv.Optional(CONF_MODE, default=0): cv.int_range(min=0, max=1),
+    cv.Required(CONF_MODE): cv.enum(MODE_OPTIONS, upper=False),
     cv.Optional(CONF_CHECK_INTERVAL, default='10s'): cv.positive_time_period_seconds,
     cv.Optional(CONF_HUBS, default=[]): cv.ensure_list(HUB_SCHEMA),
     cv.Optional(CONF_GATEWAY_ADDRESS): cv.string_strict
@@ -48,15 +47,12 @@ async def to_code(config):
     var = cg.new_Pvariable(config[CONF_ID])
     await cg.register_component(var, config)
     
-    # Налаштування пінів
-    ce_pin = await cg.gpio_pin_expression(config[CONF_CE_PIN])
-    csn_pin = await cg.gpio_pin_expression(config[CONF_CSN_PIN])
-    cg.add(var.set_pins(ce_pin, csn_pin))
+    ce = await cg.gpio_pin_expression(config[CONF_CE_PIN])
+    csn = await cg.gpio_pin_expression(config[CONF_CSN_PIN])
+    cg.add(var.set_pins(ce, csn))
     
-    # Налаштування режиму роботи
     cg.add(var.set_mode(config[CONF_MODE]))
     
-    # Налаштування інтервалу перевірки
     check_interval = config[CONF_CHECK_INTERVAL]
     cg.add(var.set_check_interval(check_interval.total_seconds()))
     
