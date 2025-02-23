@@ -53,8 +53,7 @@ async def to_code(config):
     
     cg.add(var.set_mode(config[CONF_MODE]))
     
-    check_interval = config[CONF_CHECK_INTERVAL]
-    cg.add(var.set_check_interval(check_interval.total_seconds()))
+    cg.add(var.set_check_interval(config[CONF_CHECK_INTERVAL]))
     
     # Налаштування хабів для gateway режиму
     if CONF_HUBS in config:
