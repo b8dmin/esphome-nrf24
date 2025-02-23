@@ -150,6 +150,10 @@ class NRF24L01Component : public Component {
     csn_pin_ = csn_pin;
   }
 
+  void set_check_interval(uint32_t interval) { 
+    check_interval_ = interval * 1000;  // Конвертуємо секунди в мілісекунди
+  }
+
  protected:
   GPIOPin *ce_pin_{nullptr};
   GPIOPin *csn_pin_{nullptr};
@@ -160,6 +164,10 @@ class NRF24L01Component : public Component {
   
   uint8_t gateway_address_[6] = {0};
   uint32_t last_retry_check_{0};
+  uint32_t check_interval_{10000};  // За замовчуванням 10 секунд
+  uint32_t last_check_time_{0};
+  uint32_t last_reconnect_time_{0};
+  static const uint32_t MIN_LOG_INTERVAL = 10000;  // Мінімальний інтервал між логами (10 секунд)
 
   void process_incoming_messages() {
     if (!this->radio_->available()) {
@@ -259,13 +267,44 @@ class NRF24L01Component : public Component {
   void check_hubs_status() {
     uint32_t now = millis();
     
+    // Перевіряємо чи пройшов інтервал перевірки
+    if (now - last_check_time_ < check_interval_) {
+      return;
+    }
+    last_check_time_ = now;
+
+    bool need_reconnect = false;
     for (uint8_t i = 0; i < 6; i++) {
-      if (hubs_[i].active) {
-        if (now - hubs_[i].last_seen > HUB_TIMEOUT) {
-          ESP_LOGW("NRF24", "Hub %d connection lost", i);
-          // Можна додати callback для сповіщення про втрату зв'язку
+      if (hubs_[i].active && now - hubs_[i].last_seen > HUB_TIMEOUT) {
+        ESP_LOGW("NRF24", "Hub %d connection lost", i);
+        need_reconnect = true;
+      }
+    }
+
+    // Спробуємо відновити з'єднання тільки після інтервалу
+    if (need_reconnect && (now - last_reconnect_time_ >= check_interval_)) {
+      last_reconnect_time_ = now;
+      ESP_LOGI("NRF24", "Attempting to reconnect hubs...");
+      
+      // Перезапускаємо радіо
+      this->radio_->powerDown();
+      delay(100);
+      this->radio_->powerUp();
+      
+      // Переналаштовуємо піпи для хабів
+      if (this->mode_ == 0) {  // gateway mode
+        for (uint8_t i = 0; i < 6; i++) {
+          if (hubs_[i].active) {
+            if (i == 0) {
+              this->radio_->openWritingPipe(hubs_[i].address);
+            } else {
+              this->radio_->openReadingPipe(i, hubs_[i].address);
+            }
+          }
         }
       }
+      
+      this->radio_->startListening();
     }
   }
 };
