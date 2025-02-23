@@ -1,0 +1,36 @@
+# Hub configuration example
+esphome:
+  name: nrf24_hub
+  libraries:
+    - "RF24@1.4.5"
+  # friendly_name: test
+
+esp8266:
+  board: esp12e
+
+# Enable logging
+logger:
+  level: DEBUG
+
+# Enable OTA updates
+ota:
+  password: !secret ota_password
+
+# WiFi configuration - Access Point mode
+wifi:
+  ap:
+    ssid: "Nrf24 Hub Network"
+    password: !secret ap_password
+
+# Configure SPI bus
+spi:
+  clk_pin: GPIO14
+  mosi_pin: GPIO13
+  miso_pin: GPIO12
+
+# Configure NRF24L01
+nrf24l01:
+  ce_pin: GPIO4
+  csn_pin: GPIO5
+  mode: hub
+  gateway_address: "HUB01"  # Must match gateway configuration 
