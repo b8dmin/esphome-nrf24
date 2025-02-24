@@ -34,40 +34,7 @@ class NRF24L01Component : public Component {
   static const uint32_t HUB_TIMEOUT = 60000; // 60s
 
   void setup() override {
-    // Спроба 1: get_pin() - не існує такого методу
-    // int ce_pin = this->ce_pin_->get_pin();
-    
-    // Спроба 2: get_pin_number() - не існує такого методу
-    // int ce_pin = this->ce_pin_->get_pin_number();
-    
-    // Спроба 3: pin_->get_number() - не існує поля pin_
-    // int ce_pin = this->ce_pin_->pin_->get_number();
-    
-    // Спроба 4: number() - не існує такого методу
-    // int ce_pin = this->ce_pin_->number();
-    
-    // Спроба 5: get_pin() з документації ESP32 - не працює на ESP8266
-    // int ce_pin = this->ce_pin_->get_pin();
-    
-    // Спроба 6: get_gpio() - не існує такого методу
-    // int ce_pin = this->ce_pin_->get_gpio();
-    
-    // Спроба 7: gpio_ - не існує такого поля
-    // int ce_pin = this->ce_pin_->gpio_;
-    
-    // Спроба 8: pin() - не існує такого методу
-    // int ce_pin = this->ce_pin_->pin();
-    
-    // Спроба 9: get_number() - не існує такого методу
-    // int ce_pin = this->ce_pin_->get_number();
-    
-    // Спроба 10: get_pin_number() з InternalGPIOPin - не існує такого методу
-    // int ce_pin = static_cast<esphome::InternalGPIOPin*>(this->ce_pin_)->get_pin_number();
-    
-    // Спроба 11: get_number() з InternalGPIOPin - не існує такого методу
-    // int ce_pin = static_cast<esphome::InternalGPIOPin*>(this->ce_pin_)->get_number();
-    
-    // Спроба 12: get_pin() з InternalGPIOPin
+
     int ce_pin = static_cast<esphome::InternalGPIOPin*>(this->ce_pin_)->get_pin();
     int csn_pin = static_cast<esphome::InternalGPIOPin*>(this->csn_pin_)->get_pin();
     
@@ -115,8 +82,9 @@ class NRF24L01Component : public Component {
   }
 
   void add_hub(int pipe, const std::string &address) {
-    // Перетворення текстових адрес у байтові
+    // Перетворення "HUB01" у байти
     uint8_t addr[5];
+    
     // Використовуйте адреси, які працюють у C++ коді
     if (address == "HUB01") {
       addr[0] = 0x11;
@@ -130,10 +98,21 @@ class NRF24L01Component : public Component {
       addr[2] = 0x33;
       addr[3] = 0x22;
       addr[4] = 0x11;
+    } else {
+      // Для інших адрес використовуємо перші 5 символів рядка
+      for (size_t i = 0; i < 5 && i < address.length(); i++) {
+        addr[i] = address[i];
+      }
+      // Заповнюємо нулями, якщо рядок коротший 5 символів
+      for (size_t i = address.length(); i < 5; i++) {
+        addr[i] = 0;
+      }
     }
-    // ...
-    if (pipe < 6) {
-      memcpy(hubs_[pipe].address, addr, sizeof(hubs_[pipe].address));
+    
+    // Перевіряємо, чи pipe в допустимому діапазоні
+    if (pipe >= 0 && pipe < 6) {
+      // Копіюємо тільки 5 байтів, а не sizeof(hubs_[pipe].address)
+      memcpy(hubs_[pipe].address, addr, 5);
       hubs_[pipe].active = true;
       hubs_[pipe].last_seen = 0;
       hubs_[pipe].last_msg_id = 0;
