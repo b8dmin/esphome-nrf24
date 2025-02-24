@@ -70,6 +70,21 @@ class NRF24L01Component : public Component {
     }
     
     this->radio_->startListening();
+
+    // Додайте ці рядки після ініціалізації радіо (radio_.begin())
+    
+    // Вимикаємо автоматичне підтвердження
+    this->radio_->setAutoAck(false);
+    
+    // Встановлюємо канал 76
+    this->radio_->setChannel(76);
+    
+    // Встановлюємо низьку потужність
+    this->radio_->setPALevel(RF24_PA_LOW);
+    
+    // Встановлюємо швидкість передачі 1 Mbps
+    this->radio_->setDataRate(RF24_1MBPS);
+    
     ESP_LOGI("NRF24", "Radio initialized successfully");
   }
 
