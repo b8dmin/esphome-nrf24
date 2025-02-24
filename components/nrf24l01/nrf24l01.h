@@ -84,6 +84,7 @@ class NRF24L01Component : public Component {
     this->radio_->setChannel(76);
     this->radio_->setPayloadSize(32);
     this->radio_->setRetries(5, 15);
+    this->radio_->setAutoAck(false);
     
     if (this->mode_ == 0) {  // gateway mode
       for (uint8_t i = 0; i < 6; i++) {
@@ -113,9 +114,26 @@ class NRF24L01Component : public Component {
     memcpy(gateway_address_, address.c_str(), sizeof(gateway_address_));
   }
 
-  void add_hub(uint8_t pipe, const std::string &address) {
+  void add_hub(int pipe, const std::string &address) {
+    // Перетворення текстових адрес у байтові
+    uint8_t addr[5];
+    // Використовуйте адреси, які працюють у C++ коді
+    if (address == "HUB01") {
+      addr[0] = 0x11;
+      addr[1] = 0x22;
+      addr[2] = 0x33;
+      addr[3] = 0x44;
+      addr[4] = 0x55;
+    } else if (address == "HUB02") {
+      addr[0] = 0x55;
+      addr[1] = 0x44;
+      addr[2] = 0x33;
+      addr[3] = 0x22;
+      addr[4] = 0x11;
+    }
+    // ...
     if (pipe < 6) {
-      memcpy(hubs_[pipe].address, address.c_str(), sizeof(hubs_[pipe].address));
+      memcpy(hubs_[pipe].address, addr, sizeof(hubs_[pipe].address));
       hubs_[pipe].active = true;
       hubs_[pipe].last_seen = 0;
       hubs_[pipe].last_msg_id = 0;
