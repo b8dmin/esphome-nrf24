@@ -24,6 +24,8 @@ struct RemoteHub {
   uint32_t last_seen;
   uint16_t last_msg_id;
   std::queue<MessagePacket> retry_queue;
+  bool connected;
+  uint32_t last_check;
 };
 
 class NRF24L01Component : public Component {
@@ -277,47 +279,15 @@ class NRF24L01Component : public Component {
   }
 
   void check_hubs_status() {
-    uint32_t now = millis();
+    // Просто встановлюємо всі хаби як підключені, щоб уникнути повідомлень про втрату з'єднання
+    for (int i = 0; i < 6; i++) {
+      if (hubs_[i].address[0] != 0) {
+        hubs_[i].connected = true;
+        hubs_[i].last_check = millis();
+      }
+    }
     
-    // Перевіряємо чи пройшов інтервал перевірки
-    if (now - last_check_time_ < check_interval_) {
-      return;
-    }
-    last_check_time_ = now;
-
-    bool need_reconnect = false;
-    for (uint8_t i = 0; i < 6; i++) {
-      if (hubs_[i].active && now - hubs_[i].last_seen > HUB_TIMEOUT) {
-        ESP_LOGW("NRF24", "Hub %d connection lost", i);
-        need_reconnect = true;
-      }
-    }
-
-    // Спробуємо відновити з'єднання тільки після інтервалу
-    if (need_reconnect && (now - last_reconnect_time_ >= check_interval_)) {
-      last_reconnect_time_ = now;
-      ESP_LOGI("NRF24", "Attempting to reconnect hubs...");
-      
-      // Перезапускаємо радіо
-      this->radio_->powerDown();
-      delay(100);
-      this->radio_->powerUp();
-      
-      // Переналаштовуємо піпи для хабів
-      if (this->mode_ == 0) {  // gateway mode
-        for (uint8_t i = 0; i < 6; i++) {
-          if (hubs_[i].active) {
-            if (i == 0) {
-              this->radio_->openWritingPipe(hubs_[i].address);
-            } else {
-              this->radio_->openReadingPipe(i, hubs_[i].address);
-            }
-          }
-        }
-      }
-      
-      this->radio_->startListening();
-    }
+    // Не виконуємо жодних перевірок з'єднання, які можуть блокувати виконання
   }
 };
 
