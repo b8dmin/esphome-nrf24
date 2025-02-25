@@ -6,7 +6,7 @@ from esphome.const import CONF_ID
 DEPENDENCIES = ['spi']
 AUTO_LOAD = ['spi']
 
-# Власні константи для конфігурації
+# Configuration constants
 CONF_CE_PIN = "ce_pin"
 CONF_CSN_PIN = "csn_pin"
 CONF_MODE = "mode"
@@ -16,23 +16,23 @@ CONF_ADDRESS = "address"
 CONF_PIPE = "pipe"
 CONF_CHECK_INTERVAL = 'check_interval'
 
-# Створюємо namespace для компоненту
+# Create namespace for component
 nrf24_ns = cg.esphome_ns.namespace('nrf24l01')
 NRF24Component = nrf24_ns.class_('NRF24L01Component', cg.Component)
 
-# Валідація режиму роботи
+# Mode validation
 MODE_OPTIONS = {
     "gateway": 0,
     "hub": 1
 }
 
-# Схема конфігурації для хаба
+# Hub configuration schema
 HUB_SCHEMA = cv.Schema({
     cv.Required(CONF_PIPE): cv.int_range(min=0, max=5),
     cv.Required(CONF_ADDRESS): cv.string
 })
 
-# Основна схема конфігурації
+# Main configuration schema
 CONFIG_SCHEMA = cv.Schema({
     cv.GenerateID(): cv.declare_id(NRF24Component),
     cv.Required(CONF_CE_PIN): pins.gpio_output_pin_schema,
@@ -55,13 +55,13 @@ async def to_code(config):
     
     cg.add(var.set_check_interval(config[CONF_CHECK_INTERVAL]))
     
-    # Налаштування хабів для gateway режиму
+    # Configure hubs for gateway mode
     if CONF_HUBS in config:
         for hub in config[CONF_HUBS]:
             pipe = hub[CONF_PIPE]
             address = hub[CONF_ADDRESS]
             cg.add(var.add_hub(pipe, address))
     
-    # Налаштування адреси шлюзу для hub режиму
+    # Configure gateway address for hub mode
     if CONF_GATEWAY_ADDRESS in config:
         cg.add(var.set_gateway_address(config[CONF_GATEWAY_ADDRESS])) 

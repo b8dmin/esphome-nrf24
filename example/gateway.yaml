@@ -1,49 +1,90 @@
-# Gateway configuration example
+# Gateway configuration (connects to HA)
 esphome:
   name: nrf24_gateway
-  libraries:
-    - "RF24@1.4.5"
-  # friendly_name: test
+  platform: ESP8266
 
-esp8266:
-  board: esp12e
+# Enable SPI
+spi:
+  clk_pin: GPIO14
+  mosi_pin: GPIO13
+  miso_pin: GPIO12
 
-# Enable logging
-logger:
-  level: DEBUG
+# Enable WiFi
+wifi:
+  ssid: "Your_Main_WiFi"
+  password: "Your_Password"
+
+  # Enable fallback hotspot in case WiFi connection fails
+  ap:
+    ssid: "NRF24 Gateway Fallback"
+    password: "fallback-password"
+
 # Enable Home Assistant API
 api:
 
 # Enable OTA updates
 ota:
 
-# WiFi configuration
-wifi:
-  ssid: !secret wifi_ssid
-  password: !secret wifi_password
-
-  # Enable fallback hotspot (captive portal)
-  ap:
-    ssid: "Nrf24 Gateway"
-    password: "12345678"
-
-# Enable Web server
-web_server:
-  port: 80
-
-# Configure SPI bus
-spi:
-  clk_pin: GPIO14
-  mosi_pin: GPIO13
-  miso_pin: GPIO12
+# Enable logging
+logger:
+  level: DEBUG
 
 # Configure NRF24L01
 nrf24l01:
   ce_pin: GPIO4
   csn_pin: GPIO5
   mode: gateway
+  check_interval: 30s
   hubs:
     - pipe: 0
       address: "HUB01"
     - pipe: 1
-      address: "HUB02" 
+      address: "HUB02"
+    - pipe: 2
+      address: "HUB03"
+
+# Create sensors to monitor hub status
+sensor:
+  - platform: template
+    name: "Hub 1 Status"
+    lambda: |-
+      return id(nrf24_component).get_hub_status(0);
+    update_interval: 10s
+    unit_of_measurement: ""
+    accuracy_decimals: 0
+    
+  - platform: template
+    name: "Hub 2 Status"
+    lambda: |-
+      return id(nrf24_component).get_hub_status(1);
+    update_interval: 10s
+    unit_of_measurement: ""
+    accuracy_decimals: 0
+    
+  - platform: template
+    name: "Hub 3 Status"
+    lambda: |-
+      return id(nrf24_component).get_hub_status(2);
+    update_interval: 10s
+    unit_of_measurement: ""
+    accuracy_decimals: 0
+
+# Create text sensors for last messages
+text_sensor:
+  - platform: template
+    name: "Hub 1 Last Message"
+    lambda: |-
+      return id(nrf24_component).get_last_message(0);
+    update_interval: 5s
+    
+  - platform: template
+    name: "Hub 2 Last Message"
+    lambda: |-
+      return id(nrf24_component).get_last_message(1);
+    update_interval: 5s
+    
+  - platform: template
+    name: "Hub 3 Last Message"
+    lambda: |-
+      return id(nrf24_component).get_last_message(2);
+    update_interval: 5s 

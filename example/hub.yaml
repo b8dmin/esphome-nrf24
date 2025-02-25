@@ -1,36 +1,50 @@
-# Hub configuration example
+# Hub configuration (creates local network for sensors)
 esphome:
-  name: nrf24_hub
-  libraries:
-    - "RF24@1.4.5"
-  # friendly_name: test
+  name: nrf24_hub1
+  platform: ESP8266
 
-esp8266:
-  board: esp12e
-
-# Enable logging
-logger:
-  level: DEBUG
-
-# Enable OTA updates
-ota:
-  password: !secret ota_password
-
-# WiFi configuration - Access Point mode
-wifi:
-  ap:
-    ssid: "Nrf24 Hub Network"
-    password: !secret ap_password
-
-# Configure SPI bus
+# Enable SPI
 spi:
   clk_pin: GPIO14
   mosi_pin: GPIO13
   miso_pin: GPIO12
+
+# Create local WiFi network for sensors
+wifi:
+  ap:
+    ssid: "Sensors_Network_1"
+    password: "sensor-password"
+
+# Enable logging
+logger:
+  level: DEBUG
 
 # Configure NRF24L01
 nrf24l01:
   ce_pin: GPIO4
   csn_pin: GPIO5
   mode: hub
-  gateway_address: "HUB01"  # Must match gateway configuration 
+  gateway_address: "HUB01"  # Must match gateway configuration
+
+# Example sensor that will be forwarded to gateway
+sensor:
+  - platform: dht
+    pin: GPIO2
+    temperature:
+      name: "Hub 1 Temperature"
+      id: temp_sensor
+    humidity:
+      name: "Hub 1 Humidity"
+      id: humidity_sensor
+    update_interval: 60s
+    
+# Forward sensor data to gateway
+interval:
+  - interval: 60s
+    then:
+      - lambda: |-
+          char data[24];
+          snprintf(data, sizeof(data), "T:%.1f,H:%.1f", 
+                   id(temp_sensor).state, 
+                   id(humidity_sensor).state);
+          id(nrf24_component).send_to_gateway(data); 
