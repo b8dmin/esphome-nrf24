@@ -462,7 +462,7 @@ class NRF24L01Component : public Component {
   void send_status_update() {
     // In hub mode, send periodic status updates to gateway
     char status[24];
-    snprintf(status, sizeof(status), "HUB_ALIVE:%lu", millis());
+    snprintf(status, sizeof(status), "HUB_ALIVE:%u", millis());
     send_to_gateway(status, STATUS);
   }
 

@@ -31,6 +31,7 @@ logger:
 
 # Configure NRF24L01
 nrf24l01:
+  id: nrf24_component
   ce_pin: GPIO4
   csn_pin: GPIO5
   mode: gateway
