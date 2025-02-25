@@ -196,7 +196,7 @@ class NRF24L01Component : public Component {
     }
     
     uint32_t now = millis();
-    if (now - hubs_[hub_id].last_seen < HUB_TIMEOUT) {
+    if (hubs_[hub_id].last_seen > 0 && now - hubs_[hub_id].last_seen < HUB_TIMEOUT) {
       return 1.0f;
     }
     return 0.0f;
